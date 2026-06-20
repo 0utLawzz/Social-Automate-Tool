@@ -3,9 +3,9 @@ import {
   Poppins_600SemiBold,
   Poppins_700Bold,
   Poppins_900Black,
-  useFonts,
 } from '@expo-google-fonts/poppins';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import * as Font from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect, useState } from 'react';
@@ -19,7 +19,7 @@ import { LibraryProvider } from '@/context/LibraryContext';
 import { PostsProvider } from '@/context/PostsContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const queryClient = new QueryClient();
 
@@ -29,7 +29,7 @@ function RootLayoutNav() {
   useEffect(() => {
     shouldShowOnboarding().then((should) => {
       if (should) setShowOnboarding(true);
-    });
+    }).catch(() => {});
   }, []);
 
   const handleDone = async () => {
@@ -48,20 +48,25 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts({
-    Poppins_400Regular,
-    Poppins_600SemiBold,
-    Poppins_700Bold,
-    Poppins_900Black,
-  });
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, fontError]);
+    Font.loadAsync({
+      Poppins_400Regular,
+      Poppins_600SemiBold,
+      Poppins_700Bold,
+      Poppins_900Black,
+    })
+      .catch(() => {
+        // Font load failed (e.g. network timeout on web) — fall back to system font
+      })
+      .finally(() => {
+        setReady(true);
+        SplashScreen.hideAsync().catch(() => {});
+      });
+  }, []);
 
-  if (!fontsLoaded && !fontError) return null;
+  if (!ready) return null;
 
   return (
     <SafeAreaProvider>
