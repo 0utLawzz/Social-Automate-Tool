@@ -17,6 +17,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { markOnboardingDone, OnboardingModal, shouldShowOnboarding } from '@/components/OnboardingModal';
 import { LibraryProvider } from '@/context/LibraryContext';
 import { PostsProvider } from '@/context/PostsContext';
+import { SettingsProvider } from '@/context/SettingsContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -39,8 +40,9 @@ function RootLayoutNav() {
 
   return (
     <>
-      <Stack screenOptions={{ headerShown: false }}>
+      <Stack screenOptions={{ headerShown: false, animation: 'default' }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="settings" options={{ headerShown: false, presentation: 'modal', animation: 'slide_from_bottom' }} />
       </Stack>
       {showOnboarding && <OnboardingModal onDone={handleDone} />}
     </>
@@ -57,9 +59,7 @@ export default function RootLayout() {
       Poppins_700Bold,
       Poppins_900Black,
     })
-      .catch(() => {
-        // Font load failed (e.g. network timeout on web) — fall back to system font
-      })
+      .catch(() => {})
       .finally(() => {
         setReady(true);
         SplashScreen.hideAsync().catch(() => {});
@@ -75,11 +75,13 @@ export default function RootLayout() {
           <QueryClientProvider client={queryClient}>
             <GestureHandlerRootView style={{ flex: 1 }}>
               <KeyboardProvider>
-                <LibraryProvider>
-                  <PostsProvider>
-                    <RootLayoutNav />
-                  </PostsProvider>
-                </LibraryProvider>
+                <SettingsProvider>
+                  <LibraryProvider>
+                    <PostsProvider>
+                      <RootLayoutNav />
+                    </PostsProvider>
+                  </LibraryProvider>
+                </SettingsProvider>
               </KeyboardProvider>
             </GestureHandlerRootView>
           </QueryClientProvider>
