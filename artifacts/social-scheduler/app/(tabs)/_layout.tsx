@@ -15,13 +15,17 @@ function NativeTabLayout() {
         <Icon sf={{ default: 'bolt', selected: 'bolt.fill' }} />
         <Label>Home</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="library">
+        <Icon sf={{ default: 'photo.on.rectangle', selected: 'photo.on.rectangle.fill' }} />
+        <Label>Library</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="create">
-        <Icon sf={{ default: 'plus.circle', selected: 'plus.circle.fill' }} />
+        <Icon sf={{ default: 'plus.circle.fill', selected: 'plus.circle.fill' }} />
         <Label>Create</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="queue">
         <Icon sf={{ default: 'calendar', selected: 'calendar.fill' }} />
-        <Label>Queue</Label>
+        <Label>Calendar</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="accounts">
         <Icon sf={{ default: 'person.2', selected: 'person.2.fill' }} />
@@ -54,11 +58,7 @@ function ClassicTabLayout() {
         },
         tabBarBackground: () =>
           isIOS ? (
-            <BlurView
-              intensity={100}
-              tint={isDark ? 'dark' : 'light'}
-              style={StyleSheet.absoluteFill}
-            />
+            <BlurView intensity={100} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
           ) : isWeb ? (
             <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.card }]} />
           ) : null,
@@ -69,11 +69,15 @@ function ClassicTabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="bolt.fill" tintColor={color} size={24} />
-            ) : (
-              <Ionicons name="flash" size={22} color={color} />
-            ),
+            isIOS ? <SymbolView name="bolt.fill" tintColor={color} size={24} /> : <Ionicons name="flash" size={22} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="library"
+        options={{
+          title: 'Library',
+          tabBarIcon: ({ color }) =>
+            isIOS ? <SymbolView name="photo.on.rectangle.fill" tintColor={color} size={24} /> : <Ionicons name="images" size={22} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -81,23 +85,15 @@ function ClassicTabLayout() {
         options={{
           title: 'Create',
           tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="plus.circle.fill" tintColor={color} size={24} />
-            ) : (
-              <Ionicons name="add-circle" size={22} color={color} />
-            ),
+            isIOS ? <SymbolView name="plus.circle.fill" tintColor={color} size={26} /> : <Ionicons name="add-circle" size={26} color={color} />,
         }}
       />
       <Tabs.Screen
         name="queue"
         options={{
-          title: 'Queue',
+          title: 'Calendar',
           tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="calendar.fill" tintColor={color} size={24} />
-            ) : (
-              <Feather name="calendar" size={22} color={color} />
-            ),
+            isIOS ? <SymbolView name="calendar.fill" tintColor={color} size={24} /> : <Feather name="calendar" size={22} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -105,11 +101,7 @@ function ClassicTabLayout() {
         options={{
           title: 'Accounts',
           tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="person.2.fill" tintColor={color} size={24} />
-            ) : (
-              <Ionicons name="people" size={22} color={color} />
-            ),
+            isIOS ? <SymbolView name="person.2.fill" tintColor={color} size={24} /> : <Ionicons name="people" size={22} color={color} />,
         }}
       />
     </Tabs>
