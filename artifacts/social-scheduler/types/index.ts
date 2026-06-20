@@ -47,59 +47,14 @@ export const PLATFORM_COLORS: Record<Platform, string> = {
   tiktok: '#69C9D0',
 };
 
-export const MOCK_ACCOUNTS: Account[] = [
-  {
-    id: 'acc1',
-    platform: 'facebook',
-    username: 'Creative Studio',
-    handle: '@creativestudio',
-    followers: 12547,
-    connected: true,
-  },
-  {
-    id: 'acc2',
-    platform: 'youtube',
-    username: 'Creative Studio',
-    handle: '@creativestudio',
-    followers: 48200,
-    connected: true,
-  },
-  {
-    id: 'acc3',
-    platform: 'tiktok',
-    username: 'creativestudio_',
-    handle: '@creativestudio_',
-    followers: 95100,
-    connected: false,
-  },
-];
+export const PLATFORM_HINTS: Record<Platform, string> = {
+  facebook: 'Your Facebook Page or Profile name',
+  youtube: 'Your YouTube channel name',
+  tiktok: 'Your TikTok username',
+};
 
-export const MOCK_POSTS: Post[] = [
-  {
-    id: Date.now().toString() + '1',
-    content: 'Launching something massive this week. The announcement that changes everything is almost here.',
-    platforms: ['facebook', 'youtube'],
-    format: '16:9',
-    scheduledAt: new Date(Date.now() + 86400000).toISOString(),
-    status: 'scheduled',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: Date.now().toString() + '2',
-    content: 'Behind the scenes of our latest creative shoot. Energy was absolutely electric.',
-    platforms: ['tiktok'],
-    format: '9:16',
-    scheduledAt: new Date(Date.now() + 172800000).toISOString(),
-    status: 'scheduled',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: Date.now().toString() + '3',
-    content: 'Every great creator started as a beginner. Keep pushing. Keep creating. The breakthrough is closer than you think.',
-    platforms: ['facebook', 'tiktok', 'youtube'],
-    format: '1:1',
-    scheduledAt: null,
-    status: 'published',
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-  },
+export const DEFAULT_ACCOUNTS: Account[] = [
+  { id: 'acc_fb', platform: 'facebook', username: '', handle: '', followers: 0, connected: false },
+  { id: 'acc_yt', platform: 'youtube', username: '', handle: '', followers: 0, connected: false },
+  { id: 'acc_tt', platform: 'tiktok', username: '', handle: '', followers: 0, connected: false },
 ];

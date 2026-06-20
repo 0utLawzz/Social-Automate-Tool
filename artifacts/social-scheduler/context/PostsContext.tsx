@@ -1,19 +1,20 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { Account, MOCK_ACCOUNTS, MOCK_POSTS, Post } from '@/types';
+import { Account, DEFAULT_ACCOUNTS, Post } from '@/types';
 
 interface PostsContextValue {
   posts: Post[];
   accounts: Account[];
   addPost: (post: Omit<Post, 'id' | 'createdAt'>) => void;
   deletePost: (id: string) => void;
-  toggleAccount: (id: string) => void;
+  connectAccount: (id: string, username: string, handle: string, followers: number) => void;
+  disconnectAccount: (id: string) => void;
 }
 
 const PostsContext = createContext<PostsContextValue | null>(null);
 
-const POSTS_KEY = '@postly_posts';
-const ACCOUNTS_KEY = '@postly_accounts';
+const POSTS_KEY = '@postly_posts_v2';
+const ACCOUNTS_KEY = '@postly_accounts_v2';
 
 function generateId(): string {
   return Date.now().toString() + Math.random().toString(36).substr(2, 9);
@@ -21,7 +22,7 @@ function generateId(): string {
 
 export function PostsProvider({ children }: { children: React.ReactNode }) {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>(DEFAULT_ACCOUNTS);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -31,11 +32,12 @@ export function PostsProvider({ children }: { children: React.ReactNode }) {
           AsyncStorage.getItem(POSTS_KEY),
           AsyncStorage.getItem(ACCOUNTS_KEY),
         ]);
-        setPosts(storedPosts ? JSON.parse(storedPosts) : MOCK_POSTS);
-        setAccounts(storedAccounts ? JSON.parse(storedAccounts) : MOCK_ACCOUNTS);
+        if (storedPosts) setPosts(JSON.parse(storedPosts));
+        if (storedAccounts) setAccounts(JSON.parse(storedAccounts));
+        else setAccounts(DEFAULT_ACCOUNTS);
       } catch {
-        setPosts(MOCK_POSTS);
-        setAccounts(MOCK_ACCOUNTS);
+        setPosts([]);
+        setAccounts(DEFAULT_ACCOUNTS);
       } finally {
         setLoaded(true);
       }
@@ -65,14 +67,25 @@ export function PostsProvider({ children }: { children: React.ReactNode }) {
     setPosts((prev) => prev.filter((p) => p.id !== id));
   }, []);
 
-  const toggleAccount = useCallback((id: string) => {
+  const connectAccount = useCallback(
+    (id: string, username: string, handle: string, followers: number) => {
+      setAccounts((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, connected: true, username, handle, followers } : a))
+      );
+    },
+    []
+  );
+
+  const disconnectAccount = useCallback((id: string) => {
     setAccounts((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, connected: !a.connected } : a))
+      prev.map((a) =>
+        a.id === id ? { ...a, connected: false, username: '', handle: '', followers: 0 } : a
+      )
     );
   }, []);
 
   return (
-    <PostsContext.Provider value={{ posts, accounts, addPost, deletePost, toggleAccount }}>
+    <PostsContext.Provider value={{ posts, accounts, addPost, deletePost, connectAccount, disconnectAccount }}>
       {children}
     </PostsContext.Provider>
   );

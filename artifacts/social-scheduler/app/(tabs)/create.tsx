@@ -22,34 +22,25 @@ import { AspectRatio, Platform as SocialPlatform, PLATFORM_COLORS, PLATFORM_NAME
 
 type ScheduleOption = 'now' | '1h' | 'tonight' | 'tomorrow' | 'next_week';
 
-const SCHEDULE_OPTIONS: { key: ScheduleOption; label: string }[] = [
-  { key: 'now', label: 'Now' },
-  { key: '1h', label: 'In 1h' },
-  { key: 'tonight', label: 'Tonight' },
-  { key: 'tomorrow', label: 'Tomorrow' },
-  { key: 'next_week', label: 'Next Week' },
+const SCHEDULE_OPTIONS: { key: ScheduleOption; label: string; desc: string }[] = [
+  { key: 'now', label: 'Now', desc: 'Post immediately' },
+  { key: '1h', label: 'In 1h', desc: 'Within the hour' },
+  { key: 'tonight', label: 'Tonight', desc: '8:00 PM today' },
+  { key: 'tomorrow', label: 'Tomorrow', desc: '9:00 AM' },
+  { key: 'next_week', label: 'Next Week', desc: '9:00 AM' },
 ];
 
 function getScheduledAt(option: ScheduleOption): string | null {
   const now = new Date();
   if (option === 'now') return null;
-  if (option === '1h') {
-    now.setHours(now.getHours() + 1);
-    return now.toISOString();
-  }
+  if (option === '1h') { now.setHours(now.getHours() + 1); return now.toISOString(); }
   if (option === 'tonight') {
     now.setHours(20, 0, 0, 0);
     if (now < new Date()) now.setDate(now.getDate() + 1);
     return now.toISOString();
   }
-  if (option === 'tomorrow') {
-    now.setDate(now.getDate() + 1);
-    now.setHours(9, 0, 0, 0);
-    return now.toISOString();
-  }
-  now.setDate(now.getDate() + 7);
-  now.setHours(9, 0, 0, 0);
-  return now.toISOString();
+  if (option === 'tomorrow') { now.setDate(now.getDate() + 1); now.setHours(9, 0, 0, 0); return now.toISOString(); }
+  now.setDate(now.getDate() + 7); now.setHours(9, 0, 0, 0); return now.toISOString();
 }
 
 const ALL_PLATFORMS: SocialPlatform[] = ['facebook', 'youtube', 'tiktok'];
@@ -69,12 +60,12 @@ export default function CreateScreen() {
   const bottomPad = Platform.OS === 'web' ? 120 : 100;
 
   const [content, setContent] = useState('');
-  const [selectedPlatforms, setSelectedPlatforms] = useState<SocialPlatform[]>(['facebook']);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<SocialPlatform[]>([]);
   const [format, setFormat] = useState<AspectRatio>('1:1');
   const [scheduleOption, setScheduleOption] = useState<ScheduleOption>('now');
   const [mediaUri, setMediaUri] = useState<string | null>(null);
 
-  const connectedIds = new Set(accounts.filter((a) => a.connected).map((a) => a.platform));
+  const connectedAccounts = accounts.filter((a) => a.connected);
 
   const togglePlatform = (p: SocialPlatform) => {
     Haptics.selectionAsync();
@@ -95,30 +86,43 @@ export default function CreateScreen() {
   };
 
   const handleSubmit = () => {
-    if (!content.trim()) {
-      Alert.alert('Add content', 'Write something before posting.');
-      return;
-    }
-    if (selectedPlatforms.length === 0) {
-      Alert.alert('Select platform', 'Choose at least one platform.');
-      return;
-    }
-
+    if (!content.trim()) { Alert.alert('Add a caption', 'Write something before posting.'); return; }
+    if (selectedPlatforms.length === 0) { Alert.alert('Select a platform', 'Choose at least one platform to post to.'); return; }
     const scheduledAt = getScheduledAt(scheduleOption);
     const status = scheduleOption === 'now' ? 'published' : 'scheduled';
-
-    addPost({
-      content: content.trim(),
-      mediaUri: mediaUri ?? undefined,
-      platforms: selectedPlatforms,
-      format,
-      scheduledAt,
-      status,
-    });
-
+    addPost({ content: content.trim(), mediaUri: mediaUri ?? undefined, platforms: selectedPlatforms, format, scheduledAt, status });
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setContent('');
+    setSelectedPlatforms([]);
+    setMediaUri(null);
+    setScheduleOption('now');
     router.push('/(tabs)/');
   };
+
+  if (connectedAccounts.length === 0) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.noAccountsWrap, { paddingTop: topPad + 60 }]}>
+          <Ionicons name="people-outline" size={56} color={colors.mutedForeground} />
+          <Text style={[styles.noAccountsTitle, { color: colors.foreground, fontFamily: 'Poppins_700Bold' }]}>
+            Connect an Account First
+          </Text>
+          <Text style={[styles.noAccountsDesc, { color: colors.mutedForeground, fontFamily: 'Poppins_400Regular' }]}>
+            Go to the Accounts tab and connect your Facebook, YouTube, or TikTok account before creating a post.
+          </Text>
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/accounts')}
+            style={[styles.goAccountsBtn, { backgroundColor: colors.primary }]}
+            activeOpacity={0.85}
+          >
+            <Text style={[styles.goAccountsBtnText, { color: colors.primaryForeground, fontFamily: 'Poppins_700Bold' }]}>
+              Go to Accounts
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -130,8 +134,7 @@ export default function CreateScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.title, { color: colors.foreground, fontFamily: 'Poppins_900Black' }]}>
-            NEW{' '}
-            <Text style={{ color: colors.primary }}>POST</Text>
+            NEW <Text style={{ color: colors.primary }}>POST</Text>
           </Text>
           <TouchableOpacity
             onPress={handleSubmit}
@@ -145,41 +148,37 @@ export default function CreateScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Platforms */}
+        {/* Platforms — only show connected ones */}
         <View style={styles.section}>
           <Text style={[styles.label, { color: colors.mutedForeground, fontFamily: 'Poppins_600SemiBold' }]}>
-            PLATFORMS
+            POST TO
           </Text>
           <View style={styles.platformRow}>
-            {ALL_PLATFORMS.map((p) => {
-              const isSelected = selectedPlatforms.includes(p);
-              const isConnected = connectedIds.has(p);
+            {connectedAccounts.map((acc) => {
+              const isSelected = selectedPlatforms.includes(acc.platform);
               return (
                 <TouchableOpacity
-                  key={p}
-                  onPress={() => togglePlatform(p)}
+                  key={acc.id}
+                  onPress={() => togglePlatform(acc.platform)}
                   style={[
                     styles.platformChip,
                     {
-                      backgroundColor: isSelected ? PLATFORM_COLORS[p] : colors.card,
-                      borderColor: isSelected ? PLATFORM_COLORS[p] : colors.border,
-                      opacity: isConnected ? 1 : 0.5,
+                      backgroundColor: isSelected ? PLATFORM_COLORS[acc.platform] : colors.card,
+                      borderColor: isSelected ? PLATFORM_COLORS[acc.platform] : colors.border,
                     },
                   ]}
                   activeOpacity={0.75}
                 >
-                  <PlatformIcon platform={p} />
-                  <Text
-                    style={[
-                      styles.platformLabel,
-                      { color: isSelected ? '#fff' : colors.mutedForeground, fontFamily: 'Poppins_600SemiBold' },
-                    ]}
-                  >
-                    {PLATFORM_NAMES[p]}
-                  </Text>
-                  {!isConnected && (
-                    <Ionicons name="lock-closed" size={10} color={isSelected ? '#fff' : colors.mutedForeground} />
-                  )}
+                  <PlatformIcon platform={acc.platform} />
+                  <View style={styles.platformChipInfo}>
+                    <Text style={[styles.platformLabel, { color: isSelected ? '#fff' : colors.foreground, fontFamily: 'Poppins_700Bold' }]}>
+                      {PLATFORM_NAMES[acc.platform]}
+                    </Text>
+                    <Text style={[styles.platformHandle, { color: isSelected ? '#ffffff99' : colors.mutedForeground, fontFamily: 'Poppins_400Regular' }]}>
+                      {acc.handle}
+                    </Text>
+                  </View>
+                  {isSelected && <Ionicons name="checkmark-circle" size={18} color="#fff" />}
                 </TouchableOpacity>
               );
             })}
@@ -191,17 +190,13 @@ export default function CreateScreen() {
           <Text style={[styles.label, { color: colors.mutedForeground, fontFamily: 'Poppins_600SemiBold' }]}>
             FORMAT
           </Text>
-          <FormatSelector
-            selected={format}
-            onSelect={setFormat}
-            selectedPlatforms={selectedPlatforms}
-          />
+          <FormatSelector selected={format} onSelect={setFormat} selectedPlatforms={selectedPlatforms} />
         </View>
 
         {/* Media */}
         <View style={styles.section}>
           <Text style={[styles.label, { color: colors.mutedForeground, fontFamily: 'Poppins_600SemiBold' }]}>
-            MEDIA
+            MEDIA (optional)
           </Text>
           <TouchableOpacity
             onPress={pickMedia}
@@ -219,10 +214,7 @@ export default function CreateScreen() {
             {mediaUri ? (
               <>
                 <Image source={{ uri: mediaUri }} style={styles.mediaPreview} resizeMode="cover" />
-                <TouchableOpacity
-                  onPress={() => setMediaUri(null)}
-                  style={[styles.removeMedia, { backgroundColor: colors.destructive }]}
-                >
+                <TouchableOpacity onPress={() => setMediaUri(null)} style={[styles.removeMedia, { backgroundColor: colors.destructive }]}>
                   <Ionicons name="close" size={14} color="#fff" />
                 </TouchableOpacity>
               </>
@@ -243,15 +235,7 @@ export default function CreateScreen() {
             CAPTION
           </Text>
           <TextInput
-            style={[
-              styles.textInput,
-              {
-                backgroundColor: colors.card,
-                borderColor: colors.border,
-                color: colors.foreground,
-                fontFamily: 'Poppins_400Regular',
-              },
-            ]}
+            style={[styles.textInput, { backgroundColor: colors.card, borderColor: colors.border, color: colors.foreground, fontFamily: 'Poppins_400Regular' }]}
             placeholder="What's the vibe today?"
             placeholderTextColor={colors.mutedForeground}
             multiline
@@ -269,18 +253,15 @@ export default function CreateScreen() {
         {/* Schedule */}
         <View style={styles.section}>
           <Text style={[styles.label, { color: colors.mutedForeground, fontFamily: 'Poppins_600SemiBold' }]}>
-            WHEN
+            WHEN TO POST
           </Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scheduleRow}>
+          <View style={styles.scheduleGrid}>
             {SCHEDULE_OPTIONS.map((opt) => {
               const isSelected = scheduleOption === opt.key;
               return (
                 <TouchableOpacity
                   key={opt.key}
-                  onPress={() => {
-                    Haptics.selectionAsync();
-                    setScheduleOption(opt.key);
-                  }}
+                  onPress={() => { Haptics.selectionAsync(); setScheduleOption(opt.key); }}
                   style={[
                     styles.scheduleChip,
                     {
@@ -290,18 +271,16 @@ export default function CreateScreen() {
                   ]}
                   activeOpacity={0.75}
                 >
-                  <Text
-                    style={[
-                      styles.scheduleText,
-                      { color: isSelected ? '#fff' : colors.foreground, fontFamily: 'Poppins_700Bold' },
-                    ]}
-                  >
+                  <Text style={[styles.scheduleLabel, { color: isSelected ? '#fff' : colors.foreground, fontFamily: 'Poppins_700Bold' }]}>
                     {opt.label}
+                  </Text>
+                  <Text style={[styles.scheduleDesc, { color: isSelected ? '#ffffff99' : colors.mutedForeground, fontFamily: 'Poppins_400Regular' }]}>
+                    {opt.desc}
                   </Text>
                 </TouchableOpacity>
               );
             })}
-          </ScrollView>
+          </View>
         </View>
       </ScrollView>
     </View>
@@ -311,69 +290,41 @@ export default function CreateScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scroll: { paddingHorizontal: 20, gap: 24 },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
+  noAccountsWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, gap: 16 },
+  noAccountsTitle: { fontSize: 22, textAlign: 'center' },
+  noAccountsDesc: { fontSize: 14, lineHeight: 22, textAlign: 'center' },
+  goAccountsBtn: { borderRadius: 16, paddingVertical: 14, paddingHorizontal: 32, marginTop: 8 },
+  goAccountsBtnText: { fontSize: 15 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   title: { fontSize: 32, letterSpacing: -1 },
-  postBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    borderRadius: 14,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-  },
+  postBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 14, paddingHorizontal: 18, paddingVertical: 12 },
   postBtnText: { fontSize: 14 },
   section: { gap: 10 },
   label: { fontSize: 11, letterSpacing: 1.5 },
-  platformRow: { flexDirection: 'row', gap: 10 },
+  platformRow: { gap: 10 },
   platformChip: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
+    gap: 12,
     borderWidth: 1.5,
-    borderRadius: 14,
-    paddingVertical: 12,
-  },
-  platformLabel: { fontSize: 12 },
-  mediaBtn: {
     borderRadius: 16,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: 14,
   },
+  platformChipInfo: { flex: 1 },
+  platformLabel: { fontSize: 14 },
+  platformHandle: { fontSize: 11, marginTop: 1 },
+  mediaBtn: { borderRadius: 16, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   mediaBtnInner: { alignItems: 'center', gap: 8 },
   mediaBtnText: { fontSize: 13 },
   mediaPreview: { width: '100%', height: 180, borderRadius: 16 },
   removeMedia: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
+    position: 'absolute', top: 8, right: 8, width: 26, height: 26,
+    borderRadius: 13, alignItems: 'center', justifyContent: 'center',
   },
-  textInput: {
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
-    fontSize: 15,
-    minHeight: 120,
-    lineHeight: 22,
-  },
+  textInput: { borderWidth: 1, borderRadius: 16, padding: 16, fontSize: 15, minHeight: 120, lineHeight: 22 },
   charCount: { fontSize: 11, textAlign: 'right' },
-  scheduleRow: { flexDirection: 'row', gap: 10 },
-  scheduleChip: {
-    borderWidth: 1.5,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  scheduleText: { fontSize: 13 },
+  scheduleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  scheduleChip: { borderWidth: 1.5, borderRadius: 14, padding: 14, minWidth: '45%', flex: 1 },
+  scheduleLabel: { fontSize: 14 },
+  scheduleDesc: { fontSize: 11, marginTop: 2 },
 });
