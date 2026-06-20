@@ -1,0 +1,20 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "yz7bOeTLpmw-SShVxFUG-"
+uri = "file://artifacts/social-scheduler/assets/images/icon.png"
+type = "image"
+title = "social scheduler app icon"
+
+[[generated]]
+id = "tpBkK513VodKzB6Q0RYjB"
+uri = "file://artifacts/social-scheduler/assets/images/placeholder1.png"
+type = "image"
+title = "content placeholder landscape"
+
+[[generated]]
+id = "axwOOiZZCKy1dEXDf4I1a"
+uri = "file://artifacts/social-scheduler/assets/images/placeholder2.png"
+type = "image"
+title = "content placeholder vertical"
